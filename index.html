@@ -1,0 +1,491 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Charli Bellucci — Deep Immersive Story</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --story-gold: #dec39b;
+            --story-gold-muted: rgba(222, 195, 155, 0.4);
+            --text-light: #f8fafc;
+            --text-muted: #64748b;
+            --text-desc: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            background-color: #000;
+            color: var(--text-light);
+            font-family: 'DM Sans', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            height: -webkit-fill-available;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ПОВНОЕКРАННЕ ФОТО НА ТЛІ */
+        .story-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('211.jpg');
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+            transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* КІНЕМАТОГРАФІЧНИЙ ГРАДІЄНТ ДЛЯ ЧИТАБЕЛЬНОСТІ */
+        .story-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, 
+                rgba(0, 0, 0, 0.65) 0%, 
+                rgba(0, 0, 0, 0.25) 25%, 
+                rgba(0, 0, 0, 0.45) 50%, 
+                rgba(0, 0, 0, 0.95) 90%,
+                #000000 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ТАЙМЛАЙН СМУЖКИ */
+        .story-timeline {
+            position: absolute;
+            top: 20px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+
+        .timeline-bar {
+            flex: 1;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .timeline-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: #fff;
+            transition: width 0.3s ease;
+        }
+
+        .timeline-bar.viewed .timeline-progress { width: 100%; }
+        .timeline-bar.active .timeline-progress {
+            width: 100%;
+            background: var(--story-gold);
+            box-shadow: 0 0 8px var(--story-gold);
+        }
+
+        /* ХЕДЕР СТАТУСУ */
+        .story-header {
+            position: absolute;
+            top: 38px;
+            left: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .story-header h1 {
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        /* НЕВИДИМІ ТАП-ЗОНИ КЕРУВАННЯ */
+        .story-tap-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            z-index: 5;
+        }
+        .tap-zone-left { width: 30%; height: 100%; }
+        .tap-zone-right { width: 70%; height: 100%; }
+
+        /* ЗОНА ВИВОДУ КОНТЕНТУ ЗІ СТРОГИМ ЗОНДОВАННЯМ ВИСОТИ */
+        .story-content-box {
+            position: absolute;
+            bottom: 45px;
+            left: 20px;
+            right: 20px;
+            max-height: 60vh; /* Захист від перекриття всього екрана */
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .story-slide {
+            display: none;
+            max-height: 58vh;
+            overflow-y: auto; /* Внутрішній скролл, якщо інформація велика */
+            padding-right: 6px;
+            animation: slideFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .story-slide::-webkit-scrollbar { width: 2px; }
+        .story-slide::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: translateY(25px); filter: blur(6px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .slide-num {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--story-gold);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .slide-title {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: -0.8px;
+            margin-bottom: 18px;
+            line-height: 1.1;
+        }
+
+        /* ЕЛЕМЕНТИ СТРУКТУРИ ТЕКСТУ */
+        .story-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 14.5px;
+        }
+        .story-row span:first-child { color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.5px; }
+        .story-row i { font-size: 11px; color: var(--story-gold); opacity: 0.5; margin-left: 6px; }
+        .story-row:last-child { border-bottom: none; }
+
+        .story-desc {
+            font-size: 14px;
+            line-height: 1.65;
+            color: var(--text-desc);
+            font-weight: 300;
+            margin-bottom: 14px;
+        }
+
+        /* БЛОКИ СПИСКІВ ТА ПАРАГРАФІВ */
+        .story-paragraph-block {
+            margin-bottom: 18px;
+        }
+        .story-paragraph-block:last-child { margin-bottom: 0; }
+        
+        .block-subtitle {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--story-gold);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        /* ТЕГИ ТА КНОПКИ */
+        .story-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .story-tag {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            letter-spacing: 0.3px;
+        }
+
+        .story-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .story-btn {
+            width: 100%;
+            background: #fff;
+            color: #000;
+            padding: 16px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-size: 13.5px;
+            font-weight: 500;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .story-btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .story-btn:active { opacity: 0.85; }
+
+        /* ТИХИЙ ТОСТ ТА ПІДКАЗКА */
+        .story-footer-tip {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.15);
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .story-toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .story-toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- ФОНОВИЙ МАСИВ -->
+    <div class="story-background" id="story-bg"></div>
+    <div class="story-overlay"></div>
+
+    <!-- ТАЙМЛАЙН -->
+    <div class="story-timeline" id="story-timeline">
+        <div class="timeline-bar active"><div class="timeline-progress"></div></div>
+        <div class="timeline-bar"><div class="timeline-progress"></div></div>
+        <div class="timeline-bar"><div class="timeline-progress"></div></div>
+        <div class="timeline-bar"><div class="timeline-progress"></div></div>
+        <div class="timeline-bar"><div class="timeline-progress"></div></div>
+    </div>
+
+    <!-- ФІКСОВАНИЙ ХЕДЕР -->
+    <header class="story-header">
+        <h1>Charli Bellucci</h1>
+    </header>
+
+    <!-- НЕВИДИМІ ТАП-ЗОНИ -->
+    <div class="story-tap-zones">
+        <div class="tap-zone-left" onclick="prevSlide()"></div>
+        <div class="tap-zone-right" onclick="nextSlide()"></div>
+    </div>
+
+    <!-- ОСНОВНИЙ КОНТЕНТ-ЦЕНТР -->
+    <div class="story-content-box">
+        
+        <!-- СЛАЙД 1: ГОЛОВНА (МАТРИЦЯ ДАНИХ) -->
+        <div class="story-slide" id="slide-1" style="display: block;">
+            <div class="slide-num">01 // Dossier Registry</div>
+            <h2 class="slide-title">Персональна інформація</h2>
+            
+            <div class="story-row" onclick="storyCopy('Charli_Bellucci', event)">
+                <span>Суб'єкт</span>
+                <span>Charli_Bellucci <i class="fa-regular fa-copy"></i></span>
+            </div>
+            <div class="story-row" onclick="storyCopy('44444', event)">
+                <span>Код зв'язку</span>
+                <span>44444 <i class="fa-regular fa-copy"></i></span>
+            </div>
+            <div class="story-row">
+                <span>Професійний статус</span>
+                <span style="color: var(--story-gold);">Майбутній Адвокат</span>
+            </div>
+            <div class="story-row">
+                <span>Досвід в країні</span>
+                <span>50 років</span>
+            </div>
+        </div>
+
+        <!-- СЛАЙД 2: ФІЛОСОФІЯ (ГЛИБОКИЙ ОПИС) -->
+        <div class="story-slide" id="slide-2">
+            <div class="slide-num">02 // Core Philosophy</div>
+            <h2 class="slide-title">Вектор і світогляд</h2>
+            
+            <div class="story-paragraph-block">
+                <p class="story-desc">
+                    Charli Bellucci — уособлення витонченої естетики, інтелектуального домінування та абсолютної ментальної незалежності у сучасному мегаполісі.
+                </p>
+                <p class="story-desc">
+                    Вона свідомо та принципово тримається осторонь низькорангових кримінальних розбірок, вуличного хаосу чи брудних політичних інтриг. Весь її фокус спрямований на створення унікального преміального стилю життя (lifestyle), постійний внутрішній розвиток та формування виключно якісного, інтелектуального найближчого оточення та власної репутації.
+                </p>
+                <p class="story-desc">
+                    Для неї важлива не кількість зв'язків, а їхня стратегічна глибина та взаємна відповідність найвищим стандартам поведінки.
+                </p>
+            </div>
+        </div>
+
+        <!-- СЛАЙД 3: КОДЕКС (ДИРЕКТИВИ СУБ'ЄКТА) -->
+        <div class="story-slide" id="slide-3">
+            <div class="slide-num">03 // Internal Code</div>
+            <h2 class="slide-title">Внутрішні директиви</h2>
+            
+            <div class="story-paragraph-block">
+                <h4 class="block-subtitle">I. Преміальний мінімалізм</h4>
+                <p class="story-desc">Основа візуального прояву. Жодної зайвої деталі чи надмірності. Лише чисті строгі лінії, бездоганні класичні костюми та витончено підібрані елементи особистого простору.</p>
+            </div>
+            
+            <div class="story-paragraph-block">
+                <h4 class="block-subtitle">II. Дипломатичний пріоритет</h4>
+                <p class="story-desc">Вміння тримати власні емоції під тотальним внутрішнім контролем. Навіть у критичних ситуаціях рішення приймаються на холодну голову, а будь-які конфлікти ліквідуються філігранною силою інтелекту.</p>
+            </div>
+
+            <div class="story-paragraph-block">
+                <h4 class="block-subtitle">III. Конфіденційність статусу</h4>
+                <p class="story-desc">Дотримання абсолютної інформаційної гігієни. Приватні справи, плани та внутрішні переконання залишаються закритими для сторонніх спостерігачів.</p>
+            </div>
+        </div>
+
+        <!-- СЛАЙД 4: СФЕРИ ІНТЕГРАЦІЇ -->
+        <div class="story-slide" id="slide-4">
+            <div class="slide-num">04 // Spheres of Influence</div>
+            <h2 class="slide-title">Професійні вектори</h2>
+            
+            <p class="story-desc">
+                Діяльність суб'єкта розгалужена на кілька ключових напрямків, кожен з яких відображає прагнення до досконалості:
+            </p>
+
+            <div class="story-row">
+                <span style="color: #fff;">Адвокатура та право</span>
+                <span style="font-size: 13.5px;">Захист приватних інтересів</span>
+            </div>
+            <div class="story-row">
+                <span style="color: #fff;">Прикладна психологія</span>
+                <span style="font-size: 13.5px;">Аналіз поведінкових тригерів</span>
+            </div>
+            <div class="story-row">
+                <span style="color: #fff;">Висока мода</span>
+                <span style="font-size: 13.5px;">Індивідуальний стиль</span>
+            </div>
+            <div class="story-row">
+                <span style="color: #fff;">Преміальний автоспорт</span>
+                <span style="font-size: 13.5px;">Естетика швидкості та контролю</span>
+            </div>
+
+            <div class="story-tags">
+                <span class="story-tag">Аналітика</span>
+                <span class="story-tag">Стиль</span>
+                <span class="story-tag">Консалтинг</span>
+                <span class="story-tag">Дипломатія</span>
+            </div>
+        </div>
+
+        <!-- СЛАЙД 5: КОМУНІКАЦІЙНІ КАНАЛИ -->
+        <div class="story-slide" id="slide-5">
+            <div class="slide-num">05 // Secure Communications</div>
+            <h2 class="slide-title">Канали зв'язку</h2>
+            
+            <p class="story-desc" style="margin-bottom: 20px;">
+                Для координації зустрічей, юридичного консультування або обговорення спільних закритих проектів використовуйте захищені цифрові протоколи.
+            </p>
+            
+            <div class="story-actions">
+                <a href="https://t.me/твій_юзер" target="_blank" class="story-btn">
+                    <i class="fa-brands fa-telegram-plane"></i> Запустити шифрування Telegram
+                </a>
+                <a href="https://discord.com" target="_blank" class="story-btn story-btn-secondary">
+                    <i class="fa-brands fa-discord"></i> Підключити координацію Discord
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ТОСТ -->
+    <div class="story-toast" id="story-toast">Матрицю скопійовано</div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+        const bgPhoto = document.getElementById('story-bg');
+
+        // Рівні масштабування фотографії на фоні для ефекту глибини при перемиканні
+        const zoomLevels = [1.0, 1.06, 1.12, 1.06, 1.0];
+
+        function updateStoryUI() {
+            // Перемикання відображення слайдів
+            for (let i = 1; i <= totalSlides; i++) {
+                const slide = document.getElementById(`slide-${i}`);
+                if (i === currentSlide) {
+                    slide.style.display = 'block';
+                    slide.scrollTop = 0; // Скидаємо внутрішній скролл до початку при переході
+                } else {
+                    slide.style.display = 'none';
+                }
+            }
+
+            // Оновлення прогрес-барів у верхній частині
+            const bars = document.querySelectorAll('.timeline-bar');
+            bars.forEach((bar, idx) => {
+                bar.classList.remove('active', 'viewed');
+                if (idx + 1 < currentSlide) {
+                    bar.classList.add('viewed');
+                } else if (idx + 1 === currentSlide) {
+                    bar.classList.add('active');
+                }
+            });
+
+            // Плавна зміна масштабу фонового зображення
+            bgPhoto.style.transform = `scale(${zoomLevels[currentSlide - 1]})`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateStoryUI();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateStoryUI();
+            }
+        }
+
+        function storyCopy(text, event) {
+            event.stopPropagation(); // Запобігаємо небажаному гортанню слайда вперед при кліку на копіювання
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('story-toast');
+                toast.classList.add('show');
+                setTimeout(() => { toast.classList.remove('show'); }, 1400);
+            });
+        }
+    </script>
+</body>
+</html>
